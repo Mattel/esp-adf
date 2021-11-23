@@ -658,6 +658,7 @@ esp_err_t es8311_stop(es_module_t mode)
     return ret;
 }
 
+#if 0
 esp_err_t es8311_codec_set_voice_volume(int volume)
 {
     esp_err_t res = ESP_OK;
@@ -686,6 +687,50 @@ esp_err_t es8311_codec_get_voice_volume(int *volume)
     ESP_LOGD(TAG, "GET: res:%d, volume:%d", regv, *volume);
     return res;
 }
+
+#else
+
+/*
+0x00 – -95.5dB (default) 
+0x01 – -95.0dB
+… 0.5dB/step
+0xBE – -0.5dB 
+0xBF – 0dB 
+0xC0 – +0.5dB 
+… 
+0xFF – +32dB
+*/
+
+esp_err_t es8311_codec_set_voice_volume(int volume)
+{
+    esp_err_t res = ESP_OK;
+    if (volume < 0) {
+        volume = 0;
+    } else if (volume > 0xff) {
+        volume = 0xff;
+    }
+
+    ESP_LOGI(TAG, "SET: volume:%x (0x00 = -95.5dB, 0xBF = 0dB, 0xFF = +32dB)", volume);
+    es8311_write_reg(ES8311_DAC_REG32, volume);
+    return res;
+}
+
+esp_err_t es8311_codec_get_voice_volume(int *volume)
+{
+    esp_err_t res = ESP_OK;
+    int regv = 0;
+    regv = es8311_read_reg(ES8311_DAC_REG32);
+    if (regv == ESP_FAIL) {
+        *volume = 0xbf;
+        res = ESP_FAIL;
+    } else {
+        *volume = regv;
+    }
+    ESP_LOGI(TAG, "GET: res:%d, volume:%d", regv, *volume);
+    return res;
+}
+
+#endif
 
 esp_err_t es8311_set_voice_mute(bool enable)
 {
